@@ -93,14 +93,26 @@ trigger:
 action:
 - choose:
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "toggle" or trigger.subtype == "single" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "toggle" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "device" and trigger.subtype == "single" }}'
     sequence: !input 'press_action'
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "on" or trigger.subtype == "double" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "on" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "device" and trigger.subtype == "double" }}'
     sequence: !input 'double_press_action'
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "off" or trigger.subtype == "hold" or trigger.subtype == "long" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "off" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "device" and (trigger.subtype == "hold" or trigger.subtype == "long") }}'
     sequence: !input 'hold_action'
