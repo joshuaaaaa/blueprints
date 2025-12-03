@@ -12,10 +12,8 @@ blueprint:
           filter:
           - manufacturer: eWeLink
             model: WB01
-            integration: zha
           - manufacturer: eWeLink
             model: SNZB-01P
-            integration: zha
           multiple: false
     mode:
       name: Automation mode
@@ -72,17 +70,37 @@ trigger:
   event_data:
     device_id: !input 'button_id'
     command: "off"
+- platform: device
+  device_id: !input 'button_id'
+  domain: mqtt
+  type: action
+  subtype: single
+- platform: device
+  device_id: !input 'button_id'
+  domain: mqtt
+  type: action
+  subtype: double
+- platform: device
+  device_id: !input 'button_id'
+  domain: mqtt
+  type: action
+  subtype: hold
+- platform: device
+  device_id: !input 'button_id'
+  domain: mqtt
+  type: action
+  subtype: long
 action:
 - choose:
   - conditions:
     - condition: template
-      value_template: '{{ trigger.event.data.command == "toggle" }}'
+      value_template: '{{ trigger.event.data.command == "toggle" or trigger.subtype == "single" }}'
     sequence: !input 'press_action'
   - conditions:
     - condition: template
-      value_template: '{{ trigger.event.data.command == "on" }}'
+      value_template: '{{ trigger.event.data.command == "on" or trigger.subtype == "double" }}'
     sequence: !input 'double_press_action'
   - conditions:
     - condition: template
-      value_template: '{{ trigger.event.data.command == "off" }}'
+      value_template: '{{ trigger.event.data.command == "off" or trigger.subtype == "hold" or trigger.subtype == "long" }}'
     sequence: !input 'hold_action'
