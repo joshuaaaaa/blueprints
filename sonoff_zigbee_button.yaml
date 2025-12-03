@@ -12,8 +12,10 @@ blueprint:
           filter:
           - manufacturer: eWeLink
             model: WB01
+            integration: zha
           - manufacturer: eWeLink
             model: SNZB-01P
+            integration: zha
           multiple: false
     mode:
       name: Automation mode
