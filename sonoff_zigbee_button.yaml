@@ -4,16 +4,29 @@ blueprint:
     Press, Double Press, and Hold.
   domain: automation
   input:
-    button_id:
-      name: Button
-      description: The button to configure.
+    button_device:
+      name: Button Device (ZHA)
+      description: Select the button device (for ZHA integration). Leave empty if using Zigbee2MQTT.
+      default: null
       selector:
         device:
           filter:
           - manufacturer: eWeLink
             model: WB01
+            integration: zha
           - manufacturer: eWeLink
             model: SNZB-01P
+            integration: zha
+          multiple: false
+    button_action:
+      name: Button Action Entity (Zigbee2MQTT)
+      description: Select the action sensor entity (for Zigbee2MQTT). Leave empty if using ZHA.
+      default: null
+      selector:
+        entity:
+          filter:
+          - domain: sensor
+            device_class: enum
           multiple: false
     mode:
       name: Automation mode
@@ -47,60 +60,61 @@ blueprint:
         action: {}
   source_url: https://github.com/apollo1220/blueprints/blob/main/sonoff_zigbee_button.yaml
 variables:
-  button_id: !input 'button_id'
-  press_action: !input 'press_action'
-  double_press_action: !input 'double_press_action'
-  hold_action: !input 'hold_action'
-  mode: !input 'mode'
+  button_device: !input 'button_device'
+  button_action: !input 'button_action'
 mode: !input 'mode'
 max_exceeded: silent
 trigger:
 - platform: event
   event_type: zha_event
   event_data:
-    device_id: !input 'button_id'
+    device_id: !input 'button_device'
     command: "toggle"
 - platform: event
   event_type: zha_event
   event_data:
-    device_id: !input 'button_id'
+    device_id: !input 'button_device'
     command: "on"
 - platform: event
   event_type: zha_event
   event_data:
-    device_id: !input 'button_id'
+    device_id: !input 'button_device'
     command: "off"
-- platform: device
-  device_id: !input 'button_id'
-  domain: mqtt
-  type: action
-  subtype: single
-- platform: device
-  device_id: !input 'button_id'
-  domain: mqtt
-  type: action
-  subtype: double
-- platform: device
-  device_id: !input 'button_id'
-  domain: mqtt
-  type: action
-  subtype: hold
-- platform: device
-  device_id: !input 'button_id'
-  domain: mqtt
-  type: action
-  subtype: long
+- platform: state
+  entity_id: !input 'button_action'
+  to: "single"
+- platform: state
+  entity_id: !input 'button_action'
+  to: "double"
+- platform: state
+  entity_id: !input 'button_action'
+  to: "hold"
+- platform: state
+  entity_id: !input 'button_action'
+  to: "long"
 action:
 - choose:
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "toggle" or trigger.subtype == "single" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "toggle" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "state" and trigger.to_state.state == "single" }}'
     sequence: !input 'press_action'
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "on" or trigger.subtype == "double" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "on" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "state" and trigger.to_state.state == "double" }}'
     sequence: !input 'double_press_action'
   - conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.command == "off" or trigger.subtype == "hold" or trigger.subtype == "long" }}'
+    - condition: or
+      conditions:
+      - condition: template
+        value_template: '{{ trigger.platform == "event" and trigger.event.data.command == "off" }}'
+      - condition: template
+        value_template: '{{ trigger.platform == "state" and (trigger.to_state.state == "hold" or trigger.to_state.state == "long") }}'
     sequence: !input 'hold_action'
